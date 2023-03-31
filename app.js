@@ -3,7 +3,9 @@ var express = require( 'express' ),
     bodyParser = require( 'body-parser' ),
     nluv1 = require( 'ibm-watson/natural-language-understanding/v1' ),
     { IamAuthenticator } = require( 'ibm-watson/auth' ),
-    //my = require( './my_nlu' ),
+    axios = require( 'axios' ),
+    { XMLParser } = require( 'fast-xml-parser' ),
+    { Readable } = require( 'stream' ),
     app = express();
 
 app.use( bodyParser.urlencoded( { extended: true } ) );
@@ -20,7 +22,7 @@ app.all( '/*', function( req, res, next ){
   next();
 });
 
-function getNlu( apikey, url ){
+function getNLU( apikey, url ){
   var nlu = null;
   if( apikey && url ){
     nlu = new nluv1({
@@ -35,13 +37,92 @@ function getNlu( apikey, url ){
   return nlu;
 };
 
+var parser = new XMLParser();
+async function getCSVs(){
+  return new Promise( ( resolve, reject ) => {
+    var rss = {
+      //. https://news.yahoo.co.jp/rss
+      '経済': 'https://news.yahoo.co.jp/rss/categories/business.xml',
+      'IT': 'https://news.yahoo.co.jp/rss/categories/it.xml',
+      'エンタメ': 'https://news.yahoo.co.jp/rss/categories/entertainment.xml',
+      '科学': 'https://news.yahoo.co.jp/rss/categories/science.xml',
+      'スポーツ': 'https://news.yahoo.co.jp/rss/categories/sports.xml'
+    };
+
+    var cnt = 0;
+    var lines = '';
+    var keys = Object.keys( rss );
+    keys.forEach( async function( category ){
+      var url = rss[category];
+      axios.get( url ).then( async function( result ){
+        var xml = result.data;
+        var obj = parser.parse( xml );
+        if( obj && obj.rss && obj.rss.channel && obj.rss.channel.item && obj.rss.channel.item.length ){
+          for( var i = 0; i < obj.rss.channel.item.length; i ++ ){
+            var item = obj.rss.channel.item[i];
+            var title = item.title.split( ',' ).join( '' );
+            var desc = item.description.split( ',' ).join( '' );
+            var line = title + ' ' + desc + ',' + category + '\n';
+            lines += line;
+          }
+        }
+        cnt ++;
+        if( cnt == keys.length ){
+          resolve( lines.trim() );
+        }
+      });
+    });
+  });
+}
+
+
+app.post( '/api/init', async function( req, res ){
+  res.contentType( 'application/json; charset=utf-8' );
+
+  var apikey = req.body.apikey ? req.body.apikey : '';
+  var url = req.body.url ? req.body.url : '';
+  var nlu = getNLU( apikey, url );
+  if( nlu ){
+    var training_data = await getCSVs();
+    if( training_data ){
+      var language = req.body.language ? req.body.language : 'ja';
+      var name = req.body.name ? req.body.name : 'nlu-api';
+
+      var params = {
+        language: language,
+        trainingData: Readable.from( training_data ),
+        trainingDataContentType: 'text/csv',
+        name: name,
+        modelVersion: '1.0.0'
+      };
+      nlu.createClassificationsModel( params ).then( function( result ){
+        res.write( JSON.stringify( result, null, 2 ) );
+        res.end();
+      }).catch( function( err ){
+        console.log( { err } );
+        res.status( 400 );
+        res.write( JSON.stringify( err, null, 2 ) );
+        res.end();
+      });
+    }else{
+      res.status( 400 );
+      res.write( JSON.stringify( { status: 400, statusText: 'no training_data(as csv).' }, null, 2 ) );
+      res.end();
+    }
+  }else{
+    res.status( 400 );
+    res.write( JSON.stringify( { status: 400, statusText: 'no apikey and/or url.' }, null, 2 ) );
+    res.end();
+  }
+});
+
 
 app.post( '/api/create', async function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
 
   var apikey = req.body.apikey ? req.body.apikey : '';
   var url = req.body.url ? req.body.url : '';
-  var nlu = getNlu( apikey, url );
+  var nlu = getNLU( apikey, url );
   if( nlu ){
     var training_data = req.body.training_data ? req.body.training_data : '';
     if( training_data ){
@@ -81,10 +162,9 @@ app.post( '/api/status', async function( req, res ){
 
   var apikey = req.body.apikey ? req.body.apikey : '';
   var url = req.body.url ? req.body.url : '';
-  var nlu = getNlu( apikey, url );
+  var nlu = getNLU( apikey, url );
   if( nlu ){
     nlu.listClassificationsModels().then( async function( result ){
-      console.log( JSON.stringify( result, null, 2 ) );
       res.write( JSON.stringify( result, null, 2 ) );
       res.end();
     }).catch( function( err ){
@@ -105,7 +185,7 @@ app.post( '/api/analyze', async function( req, res ){
 
   var apikey = req.body.apikey ? req.body.apikey : '';
   var url = req.body.url ? req.body.url : '';
-  var nlu = getNlu( apikey, url );
+  var nlu = getNLU( apikey, url );
   if( nlu ){
     var model_id = req.body.model_id ? req.body.model_id : '';
     var text = req.body.text ? req.body.text : '';
@@ -122,7 +202,6 @@ app.post( '/api/analyze', async function( req, res ){
         params.features = features;
       }
       nlu.analyze( params ).then( function( result ){
-        console.log( JSON.stringify( result, null, 2 ) );
         res.write( JSON.stringify( result, null, 2 ) );
         res.end();
       }).catch( function( err ){
@@ -148,12 +227,11 @@ app.post( '/api/delete', async function( req, res ){
 
   var apikey = req.body.apikey ? req.body.apikey : '';
   var url = req.body.url ? req.body.url : '';
-  var nlu = getNlu( apikey, url );
+  var nlu = getNLU( apikey, url );
   if( nlu ){
     var model_id = req.body.model_id ? req.body.model_id : '';
     if( model_id ){
       nlu.deleteClassificationsModel( { modelId: model_id } ).then( function( result ){
-        console.log( JSON.stringify( result, null, 2 ) );
         res.write( JSON.stringify( result, null, 2 ) );
         res.end();
       }).catch( function( err ){

@@ -12,24 +12,42 @@ schemes:
   - http
   - https
 paths:
-  /create:
+  /init:
     post:
       tags:
         - nlu
-      summary: Model作成
-      description: Model作成
+      summary: Model初期化
+      description: Model初期化
       produces:
         - application/json
       parameters:
         - name: body
           in: body
           schema:
-            $ref: '#/definitions/CreateRequest'
+            $ref: '#/definitions/InitRequest'
       responses:
         '200':
           description: 成功
         '400':
           description: エラー
+#  /create:
+#    post:
+#      tags:
+#        - nlu
+#      summary: Model作成
+#      description: Model作成
+#      produces:
+#        - application/json
+#      parameters:
+#        - name: body
+#          in: body
+#          schema:
+#            $ref: '#/definitions/CreateRequest'
+#      responses:
+#        '200':
+#          description: 成功
+#        '400':
+#          description: エラー
   /status:
     post:
       tags:
@@ -85,6 +103,21 @@ paths:
         '400':
           description: エラー
 definitions:
+  InitRequest:
+    type: object
+    properties:
+      apikey:
+        type: string
+        description: apikey
+      url:
+        type: string
+        description: URL
+      language:
+        type: string
+        description: 言語（デフォルト 'ja'）
+      name:
+        type: string
+        description: モデル名称（デフォルト 'nlu-api'）
   CreateRequest:
     type: object
     properties:
