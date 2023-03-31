@@ -1,0 +1,6 @@
+.git/
+node_modules/
+.memo.txt
+nlu.js
+npm-debug.log
+!.gitkeep

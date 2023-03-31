@@ -1,0 +1,16 @@
+{
+    "name": "nlu-api",
+    "version": "0.0.1",
+    "scripts": {
+        "start": "node app.js"
+    },
+    "dependencies": {
+        "body-parser": "^1.20.2",
+        "express": "^4.18.2",
+        "ibm-watson": "^8.0.0"
+    },
+    "repository": {},
+    "engines": {
+        "node": "16.x"
+    }
+}

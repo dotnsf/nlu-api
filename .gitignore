@@ -1,0 +1,5 @@
+node_modules/
+.memo.txt
+nlu.js
+package-lock.json
+!.gitkeep

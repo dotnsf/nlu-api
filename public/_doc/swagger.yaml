@@ -1,0 +1,143 @@
+swagger: '2.0'
+info:
+  description: NLU REST API ドキュメント
+  version: 0.0.1
+  title: NLU REST APIs
+#host: localhost:8080
+basePath: /api
+tags:
+  - name: nlu
+    description: NLU APIs
+schemes:
+  - http
+  - https
+paths:
+  /create:
+    post:
+      tags:
+        - nlu
+      summary: Model作成
+      description: Model作成
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/CreateRequest'
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+  /status:
+    post:
+      tags:
+        - nlu
+      summary: 作成状況確認
+      descriptoin: 作成状況確認
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/StatusRequest'
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+  /analyze:
+    post:
+      tags:
+        - nlu
+      summary: テキスト分類
+      descriptoin: テキスト分類
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/AnalyzeRequest'
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+  /delete:
+    post:
+      tags:
+        - nlu
+      summary: モデル削除
+      description: モデル削除
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          schema:
+            $ref: '#/definitions/DeleteRequest'
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+definitions:
+  CreateRequest:
+    type: object
+    properties:
+      apikey:
+        type: string
+        description: apikey
+      url:
+        type: string
+        description: URL
+      training_data:
+        type: string
+        description: トレーニングデータ(CSV)
+      language:
+        type: string
+        description: 言語（デフォルト 'ja'）
+      name:
+        type: string
+        description: モデル名称（デフォルト 'nlu-api'）
+  StatusRequest:
+    type: object
+    properties:
+      apikey:
+        type: string
+        description: apikey
+      url:
+        type: string
+        description: URL
+  AnalyzeRequest:
+    type: object
+    properties:
+      apikey:
+        type: string
+        description: apikey
+      url:
+        type: string
+        description: URL
+      model_id:
+        type: string
+        description: モデルID
+      text:
+        type: string
+        description: 問い合わせテキスト
+      language:
+        type: string
+        description: 言語（デフォルト 'ja'）
+  DeleteRequest:
+    type: object
+    properties:
+      apikey:
+        type: string
+        description: apikey
+      url:
+        type: string
+        description: URL
+      model_id:
+        type: string
