@@ -61,8 +61,8 @@ async function getCSVs(){
         if( obj && obj.rss && obj.rss.channel && obj.rss.channel.item && obj.rss.channel.item.length ){
           for( var i = 0; i < obj.rss.channel.item.length; i ++ ){
             var item = obj.rss.channel.item[i];
-            var title = item.title.split( ',' ).join( '' );
-            var desc = item.description.split( ',' ).join( '' );
+            var title = item.title.split( ',' ).join( '' ).split( '"' ).join( '' ).split( '\n' ).join( '' );
+            var desc = item.description.split( ',' ).join( '' ).split( '"' ).join( '' ).split( '\n' ).join( '' );
             var line = title + ' ' + desc + ',' + category + '\n';
             lines += line;
           }
