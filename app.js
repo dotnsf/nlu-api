@@ -46,6 +46,7 @@ async function getCSVs(){
       'IT': 'https://news.yahoo.co.jp/rss/categories/it.xml',
       'エンタメ': 'https://news.yahoo.co.jp/rss/categories/entertainment.xml',
       '科学': 'https://news.yahoo.co.jp/rss/categories/science.xml',
+      '地域': 'https://news.yahoo.co.jp/rss/categories/local.xml',
       'スポーツ': 'https://news.yahoo.co.jp/rss/categories/sports.xml'
     };
 
